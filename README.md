@@ -1,4 +1,5 @@
 # OpsLens
+[![CI](https://github.com/falguniborkar2-blip/opslens/actions/workflows/ci.yml/badge.svg)](https://github.com/falguniborkar2-blip/opslens/actions) 
 
 **A small, pluggable framework for building RAG + MCP powered conversational assistants for
 Linux and Kubernetes operations.**
@@ -42,7 +43,7 @@ flowchart LR
 | **Guardrails** | Prompt-injection heuristics, input limits, secret redaction (API keys, tokens, passwords, private keys) |
 | **Evaluation** | Labelled question set + IR metrics (Recall@k, MRR, MAP@k); a **quality gate in CI** fails if retrieval regresses |
 | **Ops** | REST API, Prometheus-style `/metrics`, Kubernetes liveness/readiness probes, UBI-based `Containerfile`, `compose.yaml`, Kubernetes manifest |
-| **Quality** | 32 pytest tests, `ruff` lint + format, `mypy --strict`, GitHub Actions on Python 3.11-3.13 plus a Podman container build and smoke test |
+| **Quality** | 33 pytest tests, `ruff` lint + format, `mypy --strict`, GitHub Actions on Python 3.11-3.13 plus a Podman container build and smoke test |
 
 ## Quick start (local, free, open source)
 
@@ -103,12 +104,13 @@ docs), each labelled with the documents that answer it. Run `opslens eval -k 3`:
 
 | mode | n | R@1 | R@3 | MRR | MAP@3 |
 |---|---|---|---|---|---|
-| bm25 | 37 | 0.716 | 0.932 | 0.867 | 0.829 |
-| hybrid | 37 | *run locally with Ollama* | | | |
+| bm25   | 37 | 0.716 | 0.932 | 0.867 | 0.829 |
+| dense  | 37 | 0.905 | 0.986 | 0.986 | 0.964 |
+| hybrid | 37 | 0.811 | 0.973 | 0.928 | 0.899 |
 
 The one BM25 miss, *"Allow httpd to talk to a database over the network"*, is a vocabulary
-mismatch (the docs say "Apache" and "connect"), exactly the case dense embeddings help with. Hybrid
-mode adds embeddings and fuses both rankings with RRF.
+mismatch (the docs say "Apache" and "connect"). Dense and hybrid search both find it.
+See "What I learned" for why dense still beats hybrid.
 
 ## Project layout
 
@@ -122,18 +124,32 @@ data/docs/     knowledge base (Markdown)                    eval/         labell
 tests/         unit + integration tests                     deploy/k8s/   Kubernetes manifest
 ```
 
-## Design decisions
+## What I learned
 
-* **Read-only tools by design.** An assistant that can change production systems needs approval
-  flows; this one only observes. Commands run without a shell, and arguments are validated, so a
-  prompt-injected model cannot run `rm -rf`.
-* **OpenAI-compatible API as the integration point.** Ollama, vLLM and most hosted providers
-  speak it, so one client covers local and cloud models.
-* **Deterministic tests.** A fake provider and an in-process MCP server mean CI needs no GPU, no
-  model and no network.
-* **Measure retrieval, not just generation.** Most RAG failures are retrieval failures, so
-  retrieval quality is tracked with standard IR metrics and enforced in CI.
+- I expected hybrid search to win, but dense search was best on my 37 test questions
+  (Recall@3 0.986 vs 0.973 for hybrid). My questions are paraphrased, so BM25 is the
+  weaker ranker here. Plain RRF gives both rankings equal weight, so BM25 pulls the
+  hybrid result down. Next I want to try weighted RRF.
+- MCP (Model Context Protocol) is a standard way to give an LLM tools. I write a tool
+  once in an MCP server, and any MCP client can list it and call it.
+- All tools are read-only on purpose. A small model can call the wrong tool or invent
+  arguments, so it must not be able to change or delete anything on the system.
+- Measuring retrieval separately from the LLM made it much easier to find problems.
 
+## Problems I hit
+
+- **Model invented tool arguments.** For "My pod keeps restarting", llama3.2:3b called
+  `service_status` with `{"unit": "your_unit_name"}`. I added a check that finds
+  placeholder values like `your_...` or `<pod-name>`. The tool is not run, and the
+  model gets an error telling it to ask the user instead. I added a unit test and
+  checked with `opslens ask ... --json` that the tool output is the error message.
+  After the fix the model asked me for the real name.
+- **Wrong document ranked first (still open).** The same question returned the systemd
+  section "Service keeps restarting" before the Kubernetes CrashLoopBackOff doc,
+  because both use the word "restarting". The model then mixed up pods and services.
+- **Setup on Windows.** I run it in WSL (Ubuntu). The Ollama installer failed until I
+  installed `zstd`. On my laptop CPU one answer with a tool call takes about 40 seconds.
+  
 ## Roadmap
 
 - [ ] Streaming responses (Server-Sent Events)
