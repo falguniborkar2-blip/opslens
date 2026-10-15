@@ -1,0 +1,37 @@
+# Minimal Kubernetes/OpenShift deployment. Point OPSLENS_LLM_BASE_URL at your model server.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opslens
+  labels: { app: opslens }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: opslens } }
+  template:
+    metadata: { labels: { app: opslens } }
+    spec:
+      securityContext: { runAsNonRoot: true }
+      containers:
+        - name: opslens
+          image: ghcr.io/falguniborkar2-blip/opslens:latest
+          ports: [{ containerPort: 8080 }]
+          env:
+            - { name: OPSLENS_LLM_BASE_URL, value: "http://ollama:11434/v1" }
+            - { name: OPSLENS_LLM_MODEL, value: "llama3.2:3b" }
+            - name: OPSLENS_LLM_API_KEY
+              valueFrom: { secretKeyRef: { name: opslens-llm, key: api-key, optional: true } }
+          readinessProbe: { httpGet: { path: /readyz, port: 8080 }, initialDelaySeconds: 5 }
+          livenessProbe: { httpGet: { path: /healthz, port: 8080 }, periodSeconds: 20 }
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { memory: 512Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: opslens }
+spec:
+  selector: { app: opslens }
+  ports: [{ port: 8080, targetPort: 8080 }]

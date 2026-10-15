@@ -1,0 +1,77 @@
+# Retrieval evaluation set. Questions are written the way users ask them (paraphrased,
+# not copied from the docs). `relevant` lists document ids (file stems) that answer it.
+questions:
+  - question: My web server won't start, how do I see why it failed?
+    relevant: [systemd-services, journald-logs]
+  - question: systemctl says status=203/EXEC, what does that mean?
+    relevant: [systemd-services]
+  - question: I changed a unit file but systemd still uses the old settings
+    relevant: [systemd-services]
+  - question: 'Error: "start request repeated too quickly"'
+    relevant: [systemd-services]
+  - question: How should I customise a service shipped by a package without editing it?
+    relevant: [systemd-services]
+  - question: The root partition is at 100%, how do I find what's eating space?
+    relevant: [disk-space]
+  - question: I deleted a huge log but df still shows the disk full
+    relevant: [disk-space]
+  - question: Disk has free gigabytes but I get "No space left on device"
+    relevant: [disk-space]
+  - question: The journal is taking several gigabytes, can I shrink it?
+    relevant: [disk-space, journald-logs]
+  - question: How can I tell if the kernel killed my process because RAM ran out?
+    relevant: [memory-oom]
+  - question: free shows almost no free memory, is my server in trouble?
+    relevant: [memory-oom]
+  - question: Limit how much memory a systemd service can use
+    relevant: [memory-oom]
+  - question: Apache gets permission denied on files even though chmod looks right
+    relevant: [selinux]
+  - question: How do I find AVC denials?
+    relevant: [selinux]
+  - question: Allow httpd to talk to a database over the network
+    relevant: [selinux]
+  - question: Rootless container cannot bind to port 80
+    relevant: [podman-containers]
+  - question: Mounted a host folder into a container and it says permission denied
+    relevant: [podman-containers, selinux]
+  - question: My podman container exits right away with code 127
+    relevant: [podman-containers]
+  - question: Run a container automatically at boot with systemd
+    relevant: [podman-containers]
+  - question: Pod keeps restarting over and over, what should I check?
+    relevant: [k8s-crashloopbackoff]
+  - question: How do I see logs of the container instance that crashed before the restart?
+    relevant: [k8s-crashloopbackoff]
+  - question: Container was OOMKilled with exit code 137 in Kubernetes
+    relevant: [k8s-crashloopbackoff, memory-oom]
+  - question: Kubernetes can't pull my image from a private registry
+    relevant: [k8s-image-pull]
+  - question: ErrImagePull unauthorized authentication required
+    relevant: [k8s-image-pull]
+  - question: My pod never gets scheduled to any node
+    relevant: [k8s-pending-pods]
+  - question: FailedScheduling insufficient cpu
+    relevant: [k8s-pending-pods]
+  - question: PVC is not bound and the pod is waiting
+    relevant: [k8s-pending-pods]
+  - question: Hostname doesn't resolve but the IP address works
+    relevant: [networking]
+  - question: How to open port 8080 in the firewall on RHEL?
+    relevant: [networking]
+  - question: Which process is listening on a port?
+    relevant: [networking]
+  - question: 'ssh says Permission denied (publickey)'
+    relevant: [ssh-access]
+  - question: Can't connect to the server over ssh, connection timed out
+    relevant: [ssh-access, networking]
+  - question: Which package provides the dig command?
+    relevant: [dnf-packages]
+  - question: dnf fails to download metadata for a repo
+    relevant: [dnf-packages]
+  - question: Undo the last package update
+    relevant: [dnf-packages]
+  - question: Show only error messages from the previous boot
+    relevant: [journald-logs]
+  - question: Logs disappear after every reboot
+    relevant: [journald-logs]

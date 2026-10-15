@@ -1,0 +1,18 @@
+# OpsLens configuration. Every value can be overridden with OPSLENS_* env variables.
+llm:
+  provider: openai_compatible
+  base_url: http://localhost:11434/v1   # Ollama; or https://api.openai.com/v1, https://api.groq.com/openai/v1
+  model: llama3.2:3b                    # must support tool calling for MCP tools
+  embedding_model: nomic-embed-text     # used only when rag.mode is dense or hybrid
+rag:
+  docs_dir: data/docs
+  index_path: data/index.json
+  chunk_size: 800
+  chunk_overlap: 120
+  top_k: 4
+  mode: hybrid                          # bm25 | dense | hybrid (BM25 + embeddings, fused with RRF)
+mcp:
+  enabled: true
+  command: python
+  args: ["-m", "opslens.tools.mcp_server"]
+  max_tool_rounds: 3
